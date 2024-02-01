@@ -12,6 +12,7 @@ type ServerConfigParams struct {
 	StorageFile     string
 	StorageInterval uint
 	Restore         bool
+	DBConnect       string
 }
 
 type ServerEnvParams struct {
@@ -20,6 +21,7 @@ type ServerEnvParams struct {
 	StorageFile     string `env:"FILE_STORAGE_PATH"`
 	StorageInterval uint   `env:"STORE_INTERVAL"`
 	Restore         bool   `env:"RESTORE"`
+	DBConnect       string `env:"DATABASE_DSN"`
 }
 
 var ServerParams ServerConfigParams
@@ -31,6 +33,7 @@ func GetServerConfigs() {
 	flag.StringVar(&ServerParams.StorageFile, "f", "/tmp/metrics-db.json", "Metrics metricsstorage file")
 	flag.UintVar(&ServerParams.StorageInterval, "i", 300, "Write to file interval")
 	flag.BoolVar(&ServerParams.Restore, "r", true, "Should be metrics loaded from file on start server")
+	flag.StringVar(&ServerParams.DBConnect, "d", "host=localhost port=5432 dbname=postgres user=postgres password=123password", "All parameters for connection to database")
 	flag.Parse()
 
 	err := env.Parse(&ServerEnvs)
@@ -51,6 +54,9 @@ func GetServerConfigs() {
 	}
 	if restore := ServerEnvs.Restore; restore {
 		ServerParams.Restore = restore
+	}
+	if dbConnect := ServerEnvs.DBConnect; dbConnect != "" {
+		ServerParams.DBConnect = dbConnect
 	}
 }
 

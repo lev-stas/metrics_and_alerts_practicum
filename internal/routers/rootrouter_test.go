@@ -1,7 +1,9 @@
 package routers
 
 import (
+	"database/sql"
 	"github.com/go-resty/resty/v2"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/lev-stas/metricsmonitor.git/internal/configs"
 	"github.com/lev-stas/metricsmonitor.git/internal/metricsstorage"
 	"github.com/stretchr/testify/assert"
@@ -27,7 +29,13 @@ func TestRootRouter(t *testing.T) {
 	}
 	defer fileWriter.Close()
 
-	ts := httptest.NewServer(RootRouter(storage, fileWriter))
+	db, err := sql.Open("pgx", configs.ServerParams.DBConnect)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	ts := httptest.NewServer(RootRouter(storage, fileWriter, db))
 	client := resty.New()
 	updateUrl := ts.URL + "/update/"
 	valueUrl := ts.URL + "/value/"
@@ -217,5 +225,4 @@ func TestRootRouter(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 405, resp.StatusCode())
 	})
-
 }

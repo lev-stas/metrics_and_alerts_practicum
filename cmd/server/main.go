@@ -1,6 +1,8 @@
 package main
 
 import (
+	"database/sql"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/lev-stas/metricsmonitor.git/internal/configs"
 	"github.com/lev-stas/metricsmonitor.git/internal/gzipper"
 	"github.com/lev-stas/metricsmonitor.git/internal/logger"
@@ -27,7 +29,14 @@ func main() {
 	if err != nil {
 		logger.Log.Errorw("Error during creating New File Writer")
 	}
-	r := routers.RootRouter(storage, writer)
+
+	db, err := sql.Open("pgx", configs.ServerParams.DBConnect)
+	if err != nil {
+		logger.Log.Debugw("Can't connect to DB", "error", err)
+	}
+	defer db.Close()
+
+	r := routers.RootRouter(storage, writer, db)
 	if configs.ServerParams.InitLoad() {
 		if err := preloadworkers.RestoreMetricsFromFile(storage); err != nil {
 			logger.Log.Fatal("Error during reading metrics from file")

@@ -1,6 +1,7 @@
 package routers
 
 import (
+	"database/sql"
 	"github.com/go-chi/chi/v5"
 	"github.com/lev-stas/metricsmonitor.git/internal/handlers"
 	"github.com/lev-stas/metricsmonitor.git/internal/metricsstorage"
@@ -8,7 +9,7 @@ import (
 	"strings"
 )
 
-func RootRouter(storage *metricsstorage.MemStorage, fileWriter *metricsstorage.FileWriter) http.Handler {
+func RootRouter(storage *metricsstorage.MemStorage, fileWriter *metricsstorage.FileWriter, db *sql.DB) http.Handler {
 	r := chi.NewRouter()
 
 	checkTypeMiddleware := func(next http.Handler) http.Handler {
@@ -28,6 +29,7 @@ func RootRouter(storage *metricsstorage.MemStorage, fileWriter *metricsstorage.F
 	r.Use(checkTypeMiddleware)
 
 	r.Get("/", handlers.RootHandler(storage))
+	r.Get("/ping", handlers.PingHandler(db))
 	r.Post("/value/", handlers.ValueHandlerJSON(storage))
 	r.Get("/value/{metricsType}/{metricsName}", handlers.ValueHandler(storage))
 	r.Post("/update/", handlers.HandleUpdateJSON(storage, fileWriter))
